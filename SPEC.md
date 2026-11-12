@@ -156,3 +156,11 @@ Chaque ligne de dépense affiche :
 - Dépôt GitHub privé `budget-molon`, projet Vercel sur le compte existant (offre Hobby).
 - Synchronisation par GitHub Actions.
 - Indispensable / accessoire et tags conservés (section 7 bis).
+- Chèques : toujours « À catégoriser » (le libellé ne dit rien du bénéficiaire).
+- Catégorisation automatique : règle commerçant, Padel, libellé déjà vu dans l'historique, code commerçant, enseigne.
+- Frais fixe : rattaché par motif de libellé, avec un montant exact facultatif (ex. Hello Asso 26 €). Assurance prêt et Orange sont séparés en deux contrats.
+- Frais variables : toutes les dépenses hors frais fixes, épargne, virements internes, débit mensuel des cartes et frais pro.
+- Revenus de l'enveloppe : catégories « Salaires » et « Allocations et pensions » du mois précédent.
+- Premiers prévus : enveloppe répartie au prorata des dépenses des 3 mois précédents, arrondie à 10 € ; ensuite, chaque mois reprend les prévus du précédent.
+- Jauges : une seule alerte par poste et par mois pour le seuil le plus haut atteint.
+

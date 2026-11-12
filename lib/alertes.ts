@@ -23,16 +23,17 @@ export async function verifierAlertes(nouvelles: Set<string>) {
       if (await creer(`grosse:${d.id}`, "grosse_depense", m)) envoyer.push(m);
     }
   }
-  // Jauges du mois : on enregistre chaque seuil atteint, mais on ne notifie que le plus haut
+  // Jauges du mois : une alerte par seuil franchi, seulement si aucun seuil égal ou plus haut n'a déjà été signalé
   for (const [poste, p] of Object.entries(prevu)) {
     const depense = -liste.filter((d) => d.poste === poste).reduce((s, d) => s + d.net, 0);
     const pct = p > 0 ? (depense / p) * 100 : 0;
-    let plusHaut: string | null = null;
-    for (const s of [...seuils].sort((a, b) => a - b)) {
-      const m = `${poste} : ${Math.round(pct)} % du prévu du mois (${euros(depense)} / ${euros(p)})`;
-      if (pct >= s && (await creer(`jauge:${mois.debut}:${poste}:${s}`, "jauge", m))) plusHaut = m;
-    }
-    if (plusHaut) envoyer.push(plusHaut);
+    const atteint = Math.max(-1, ...seuils.filter((s) => pct >= s));
+    if (atteint < 0) continue;
+    const prefixe = `jauge:${mois.debut}:${poste}:`;
+    const [{ deja }] = await sql`select coalesce(max(split_part(cle, ':', 4)::numeric), -1)::float deja from alertes where cle like ${prefixe + "%"}`;
+    if (deja >= atteint) continue;
+    const m = `${poste} : ${Math.round(pct)} % du prévu du mois (${euros(depense)} / ${euros(p)})`;
+    if (await creer(prefixe + atteint, "jauge", m)) envoyer.push(m);
   }
   const fin = session().valid_until.slice(0, 10);
   const jours = Math.round((new Date(fin).getTime() - new Date(aujourdhui()).getTime()) / 864e5);
