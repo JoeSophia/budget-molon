@@ -1,0 +1,15 @@
+name: Synchro bancaire
+
+on:
+  schedule:
+    - cron: "0 5,10,15,20 * * *" # 4 fois par jour (heure UTC), la limite DSP2 sans action de l'utilisateur
+  workflow_dispatch:
+
+jobs:
+  synchro:
+    runs-on: ubuntu-latest
+    steps:
+      - run: >
+          curl -sS --fail-with-body --max-time 280 -X POST
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          https://budget-molon.vercel.app/api/sync
