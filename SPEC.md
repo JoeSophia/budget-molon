@@ -13,7 +13,7 @@ Elle remplace la page actuelle (artifact claude.ai + scripts Python du dossier `
 ## 2. Utilisateurs et accès
 
 - Deux comptes, avec les mêmes droits : Jonathan (molon.jonathan@gmail.com) et Séverine (severine.molon@gmail.com).
-- Connexion par lien envoyé par e-mail. Seules les deux adresses autorisées peuvent se connecter.
+- Connexion avec le bouton « Se connecter avec Google ». Seules les deux adresses autorisées peuvent se connecter.
 - L'app est pensée d'abord pour le téléphone. On l'installe sur l'écran d'accueil (PWA), ce qui est nécessaire pour recevoir les notifications sur iPhone.
 
 ## 3. Données bancaires
@@ -138,7 +138,7 @@ Chaque ligne de dépense affiche :
   - `notes`, `tags`, `transaction_tags`, `alertes`, `parametres`, `abonnements_push`.
 - **Synchronisation** : tâche planifiée GitHub Actions (4 fois par jour, gratuite) qui appelle une route protégée de l'app, puis appel de l'API Enable Banking (JWT RS256), puis enregistrement en base, puis vérification des alertes.
 - **Notifications** : Web Push avec des clés VAPID.
-- **Connexion** : Auth.js avec un lien envoyé par e-mail (fournisseur d'e-mail, par ex. Resend).
+- **Connexion** : Auth.js, fournisseur Google (OAuth), liste blanche des deux adresses.
 
 ## 12. Étapes
 
