@@ -37,3 +37,6 @@ export async function fraisFixes(): Promise<FraisFixe[]> {
   });
 }
 
+
+/** Condition SQL « la transaction t est un prélèvement de frais fixe » : exclue des frais variables. */
+export const EST_FIXE = `exists (select 1 from frais_fixes f where f.actif and f.motif is not null and ${RATTACHE})`;

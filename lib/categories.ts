@@ -116,3 +116,13 @@ export function categoriser(lib: string, montant: number, mcc: string | null, re
     ?? (montant > 0 ? undefined : enseigne(lib))
     ?? "A catégoriser";
 }
+
+// Indispensable par défaut (render.py), corrigeable d'un clic sur la dépense
+const POSTES_ESSENTIELS = new Set(["Santé", "Impôts", "Scolarité & Enfants", "Auto & Transports", "Logement"]);
+const CATS_ESSENTIELLES = new Set(["Supermarché / Epicerie", "Alimentation - Autres", "Coiffeur", "Pharmacie"]);
+const CATS_ACCESSOIRES = new Set(["Amendes", "Frais bancaires"]);
+export const essentielParDefaut = (categorie: string) =>
+  !CATS_ACCESSOIRES.has(categorie) && (POSTES_ESSENTIELS.has(poste(categorie)) || CATS_ESSENTIELLES.has(categorie));
+
+// Catégories proposées sur une dépense : celles du budget, plus celles qui la sortent du budget
+export const CATEGORIES = [...Object.keys(GROUPES), "Epargne", "Virements internes", "Dépenses pro"].sort((a, b) => a.localeCompare(b, "fr"));

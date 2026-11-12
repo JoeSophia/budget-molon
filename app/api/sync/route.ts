@@ -1,6 +1,7 @@
 // Synchronisation bancaire, appelée par GitHub Actions (.github/workflows/synchro.yml) avec le jeton CRON_SECRET.
 import { session, transactions } from "@/lib/banque";
 import { categoriser, libelle, type Connue } from "@/lib/categories";
+import { verifierAlertes } from "@/lib/alertes";
 import { sql } from "@/lib/db";
 
 export async function POST(req: Request) {
@@ -57,8 +58,10 @@ export async function POST(req: Request) {
   await sql`insert into transaction_tags select * from json_populate_recordset(null::transaction_tags, ${JSON.stringify(tagues)}::json)
             on conflict do nothing`;
 
+  const alertes = await verifierAlertes(new Set(nouvelles.keys()));
+
   return Response.json({
-    recues: recues.length, nouvelles: nouvelles.size, mises_a_jour: maj.size, tags: tagues.length,
+    alertes: alertes.length, recues: recues.length, nouvelles: nouvelles.size, mises_a_jour: maj.size, tags: tagues.length,
     a_categoriser: [...nouvelles.values()].filter((t) => t.categorie === "A catégoriser").length, autorisation_jusqu_au: s.valid_until.slice(0, 10),
   });
 }

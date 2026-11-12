@@ -15,6 +15,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Budget Molon",
   description: "Suivi des dépenses de la famille Molon",
+  icons: { apple: "/icones/180" },
+  appleWebApp: { capable: true, title: "Budget", statusBarStyle: "default" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
