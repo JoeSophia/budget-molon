@@ -1,5 +1,31 @@
 // Catégorisation automatique, reprise de Suivi-Depenses/eb_releve.py.
 
+// Sous-catégorie -> poste (GROUPES de analyse.py)
+export const GROUPES: Record<string, string> = {
+  "Supermarché / Epicerie": "Alimentation & Restau.", "Alimentation - Autres": "Alimentation & Restau.", "Restaurants": "Alimentation & Restau.",
+  "Sortie au restaurant": "Alimentation & Restau.", "Fast foods": "Alimentation & Restau.", "Café": "Alimentation & Restau.",
+  "Achats & Shopping - Autres": "Achats & Shopping", "Vêtements/Chaussures": "Achats & Shopping", "High Tech": "Achats & Shopping",
+  "Articles de sport": "Achats & Shopping", "Cadeaux": "Achats & Shopping",
+  "Carburant": "Auto & Transports", "Péage": "Auto & Transports", "Stationnement": "Auto & Transports", "Entretien véhicule": "Auto & Transports",
+  "Assurance véhicule": "Auto & Transports", "Auto & Transports - Autres": "Auto & Transports", "Amendes": "Auto & Transports",
+  "Location de véhicule": "Auto & Transports", "Transports en commun": "Auto & Transports", "Billets de train": "Auto & Transports",
+  "Remboursement emprunt": "Logement (prêt)",
+  "Electricité": "Logement", "Eau": "Logement", "Logement - Autres": "Logement", "Assurance habitation": "Logement",
+  "Extérieur et jardin": "Logement", "Décoration": "Logement", "Travaux maison": "Logement",
+  "Sport": "Loisirs & Sorties", "Padel": "Loisirs & Sorties", "Sports d'hiver": "Loisirs & Sorties", "Loisirs & Sorties - Autres": "Loisirs & Sorties",
+  "Sorties culturelles": "Loisirs & Sorties", "Divertissements": "Loisirs & Sorties", "Hobbies": "Loisirs & Sorties",
+  "Pharmacie": "Santé", "Médecin": "Santé", "Santé - Autres": "Santé",
+  "Ecole": "Scolarité & Enfants", "Fournitures scolaires": "Scolarité & Enfants", "Scolarité & Enfants - Autres": "Scolarité & Enfants",
+  "Coiffeur": "Esthétique & Soins", "Cosmétique": "Esthétique & Soins", "Esthétique & Soins - Autres": "Esthétique & Soins",
+  "Téléphonie mobile": "Abonnements", "Internet": "Abonnements", "Abonnements - Autres": "Abonnements", "Services en ligne": "Abonnements",
+  "Frais bancaires": "Banque & assurances prêt", "Services Bancaires": "Banque & assurances prêt",
+  "Impôts sur le revenu": "Impôts", "Impôts fonciers": "Impôts", "Dons": "Dons",
+  "Virements": "Divers", "Banque - Autres": "Divers", "Frais Animaux": "Divers",
+  "Hôtels": "Vacances", "Voyages / Vacances": "Vacances",
+  "A catégoriser": "À catégoriser",
+};
+export const poste = (categorie: string) => GROUPES[categorie] ?? "Divers";
+
 // Code commerçant -> sous-catégorie
 export const MCC: Record<string, string> = {
   "5411": "Supermarché / Epicerie", "5422": "Supermarché / Epicerie", "5499": "Alimentation - Autres", "5462": "Alimentation - Autres",
@@ -82,6 +108,7 @@ function parHistorique(lib: string, credit: boolean, connues: Connue[]) {
 }
 
 export function categoriser(lib: string, montant: number, mcc: string | null, regles: Record<string, string>, connues: Connue[]) {
+  if (/^cheque\b/i.test(lib)) return "A catégoriser"; // le libellé ne dit rien du bénéficiaire
   return regles[norm(lib).slice(0, 30)]
     ?? (/padel/i.test(lib) ? "Padel" : undefined) // avant le MCC, qui dit seulement « Sport »
     ?? parHistorique(lib, montant > 0, connues)

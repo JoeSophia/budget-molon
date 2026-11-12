@@ -37,6 +37,8 @@ create table if not exists frais_fixes (
   prochaine_echeance date,
   actif        boolean not null default true
 );
+-- Montant exact exigé pour rattacher (ex. Hello Asso : seule la cotisation de 26 € est fixe)
+alter table frais_fixes add column if not exists filtre_montant numeric(12, 2);
 
 -- Prévu du mois par poste ; « non réparti » absorbe l'écart quand l'enveloppe change
 create table if not exists previsions (
