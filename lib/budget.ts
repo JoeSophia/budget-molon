@@ -1,5 +1,5 @@
 // Frais variables : périodes, dépenses nettes, enveloppe et prévus par poste (spec §6).
-import { essentielParDefaut, GROUPES, poste } from "@/lib/categories";
+import { essentielParDefaut, GROUPES } from "@/lib/categories";
 import { sql } from "@/lib/db";
 import { EST_FIXE, fraisFixes } from "@/lib/fixes";
 
@@ -34,6 +34,16 @@ export function bornes(periode: Periode, ref: string) {
 export const INTERNE = "Prlv Carte Depenses Carte|Vir Inst De Jonathan Alexandre|Vir Inst De Mme Severine Molon";
 const HORS_BUDGET = `(t.categorie in ('Epargne', 'Virements internes', 'Dépenses pro') or t.libelle ~* '${INTERNE}')`;
 
+/** Sous-catégorie -> poste, celles du code plus celles ajoutées depuis l'app. */
+export async function groupes(): Promise<Record<string, string>> {
+  const ajoutees = await sql`select nom, poste from categories`;
+  return { ...GROUPES, ...Object.fromEntries(ajoutees.map((c) => [c.nom, c.poste])) };
+}
+
+// Postes pilotés par un prévu : tous sauf le prêt (fixe) et « À catégoriser »
+export const postes = async (g?: Record<string, string>) =>
+  [...new Set(Object.values(g ?? await groupes()))].filter((p) => p !== "Prêt immobilier" && p !== "À catégoriser").sort((a, b) => a.localeCompare(b, "fr"));
+
 export type Depense = {
   id: string; compte: "cc" | "cj" | "cs"; date: string; libelle: string; montant: number; rembourse: number; net: number;
   categorie: string; poste: string; exceptionnel: boolean; essentiel: boolean; essentiel_force: boolean | null;
@@ -51,10 +61,11 @@ export async function depenses(debut: string, fin: string): Promise<Depense[]> {
      order by t.date desc, t.montant`,
     [debut, fin],
   );
+  const g = await groupes();
   return lignes
     .map((t) => ({
-      ...t, net: Math.min(0, t.montant + t.rembourse), poste: poste(t.categorie), essentiel_force: t.essentiel,
-      essentiel: t.essentiel ?? essentielParDefaut(t.categorie),
+      ...t, net: Math.min(0, t.montant + t.rembourse), poste: g[t.categorie] ?? "Divers", essentiel_force: t.essentiel,
+      essentiel: t.essentiel ?? essentielParDefaut(t.categorie, g[t.categorie] ?? "Divers"),
     }) as Depense)
     .filter((t) => t.net < 0);
 }
@@ -75,14 +86,12 @@ export async function enveloppe(mois: string) {
   return { revenus, epargne, fixes, montant: revenus - epargne - fixes };
 }
 
-// Postes pilotés par un prévu : tous sauf le prêt (fixe) et « À catégoriser »
-export const POSTES = [...new Set([...Object.values(GROUPES), "Divers"])].filter((p) => p !== "Logement (prêt)" && p !== "À catégoriser").sort();
-
 /**
  * Prévus du mois par poste. Au premier affichage d'un mois, on reprend ceux du dernier mois connu ;
  * s'il n'y en a aucun, on répartit l'enveloppe au prorata des dépenses des 3 mois précédents.
  */
 export async function prevus(mois: string): Promise<Record<string, number>> {
+  const POSTES = await postes();
   let lignes = await sql`select poste, montant::float from previsions where mois = ${mois}`;
   if (!lignes.length) {
     const [prec] = await sql`select max(mois)::text mois from previsions where mois < ${mois}`;
@@ -113,6 +122,7 @@ export async function prevusPeriode(periode: Periode, ref: string) {
   const duMois = await prevus(mois);
   if (periode === "mois") return duMois;
   if (periode === "semaine") return Object.fromEntries(Object.entries(duMois).map(([p, v]) => [p, (v * 12) / 52]));
+  const POSTES = Object.keys(duMois);
   const annee = await sql`select mois::text, poste, montant::float from previsions where extract(year from mois) = ${Number(ref.slice(0, 4))}`;
   const connus = new Set(annee.map((l) => l.mois));
   const manquants = 12 - connus.size;

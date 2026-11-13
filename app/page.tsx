@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { connecte } from "@/auth";
-import { aujourdhui, bornes, depenses, enveloppe, parametre, POSTES, prevusPeriode, type Depense } from "@/lib/budget";
+import { aujourdhui, bornes, depenses, enveloppe, parametre, postes, prevusPeriode, type Depense } from "@/lib/budget";
 import { sql } from "@/lib/db";
 import { euros } from "@/lib/format";
 import { changerPrevu } from "./actions";
@@ -35,12 +35,13 @@ async function Contenu({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
   const mois1 = mois.debut;
 
   // Une seule lecture couvre la période affichée et les colonnes semaine / mois / année de l'exceptionnel
-  const [toutes, prevus, seuils, env, tags] = await Promise.all([
+  const [toutes, prevus, seuils, env, tags, POSTES] = await Promise.all([
     depenses(sem.debut < an.debut ? sem.debut : an.debut, sem.fin > an.fin ? sem.fin : an.fin),
     prevusPeriode(periode, ref),
     parametre<number[]>("seuils_jauge"),
     enveloppe(mois1),
     sql`select nom from tags order by nom`,
+    postes(),
   ]);
   const dans = (l: Depense[], x: { debut: string; fin: string }) => l.filter((d) => d.date >= x.debut && d.date <= x.fin);
   const liste = dans(toutes, b);

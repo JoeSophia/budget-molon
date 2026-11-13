@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import type { Depense } from "@/lib/budget";
-import { CATEGORIES } from "@/lib/categories";
+import { HORS_BUDGET } from "@/lib/categories";
 import { euros } from "@/lib/format";
 import {
-  annulerRemboursements, basculerExceptionnel, basculerTag, changerCategorie, definirEssentiel, entreesDisponibles, noter, rembourser,
+  annulerRemboursements, basculerExceptionnel, basculerTag, categoriesDisponibles, changerCategorie, definirEssentiel, entreesDisponibles, noter,
+  rembourser,
 } from "./actions";
 
 const QUI = { cj: "♂", cs: "♀", cc: "" };
@@ -18,6 +19,7 @@ export default function Ligne({ d, tagsDispo }: { d: Depense; tagsDispo: string[
   const [panneau, setPanneau] = useState<"cat" | "note" | "remb" | "tag" | null>(null);
   const [enCours, demarrer] = useTransition();
   const [entrees, setEntrees] = useState<Entree[] | null>(null);
+  const [groupes, setGroupes] = useState<Record<string, string> | null>(null);
   const agir = (f: () => Promise<unknown>) => demarrer(async () => { await f(); setPanneau(null); });
   const ouvrir = (p: typeof panneau) => setPanneau(panneau === p ? null : p);
   const motif = d.libelle.replace(/^(Prlv|Cb) /, "").split(" ").slice(0, 3).join(" ").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -38,7 +40,7 @@ export default function Ligne({ d, tagsDispo }: { d: Depense; tagsDispo: string[
         </div>
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-1 text-sm">
-        <button className={`${bouton} underline decoration-dotted`} onClick={() => ouvrir("cat")} aria-expanded={panneau === "cat"}>{d.categorie}</button>
+        <button className={`${bouton} underline decoration-dotted`} onClick={() => { ouvrir("cat"); if (!groupes) categoriesDisponibles().then(setGroupes); }} aria-expanded={panneau === "cat"}>{d.categorie}</button>
         <button className={`${bouton} ${d.essentiel ? "text-emerald-700 dark:text-emerald-400" : "text-orange-700 dark:text-orange-400"}`}
                 onClick={() => agir(() => definirEssentiel(d.id, !d.essentiel))} title="Changer indispensable / accessoire">
           {d.essentiel ? "indispensable" : "accessoire"}
@@ -56,16 +58,10 @@ export default function Ligne({ d, tagsDispo }: { d: Depense; tagsDispo: string[
       </div>
       {d.note && panneau !== "note" && <p className="mt-1 text-sm italic text-neutral-600 dark:text-neutral-400">{d.note}</p>}
 
-      {panneau === "cat" && (
-        <form className="mt-2 flex flex-wrap items-center gap-2 text-sm"
-              action={(f) => agir(() => changerCategorie(d.id, String(f.get("categorie")), f.get("toujours") === "on"))}>
-          <select name="categorie" defaultValue={d.categorie} className={champ} aria-label="Catégorie">
-            {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-          </select>
-          <label className="flex items-center gap-1"><input type="checkbox" name="toujours" /> toujours pour ce commerçant</label>
-          <button className="rounded bg-emerald-700 px-2 py-1 text-white">OK</button>
-        </form>
-      )}
+      {panneau === "cat" && (!groupes ? <p className="mt-2 text-sm">Chargement…</p> : (
+        <ChoixCategorie actuelle={d.categorie} groupes={groupes}
+                        valider={(cat, p, toujours) => agir(() => changerCategorie(d.id, cat, toujours, p))} />
+      ))}
       {panneau === "note" && (
         <form className="mt-2 flex gap-2 text-sm" action={(f) => agir(() => noter(d.id, String(f.get("note"))))}>
           <input name="note" defaultValue={d.note ?? ""} autoFocus className={`${champ} flex-1`} aria-label="Note" />
@@ -114,5 +110,53 @@ export default function Ligne({ d, tagsDispo }: { d: Depense; tagsDispo: string[
         </div>
       )}
     </li>
+  );
+}
+
+const NOUVEAU = "+", HORS = "Hors budget";
+
+/** Poste puis sous-catégorie ; « + » dans l'une ou l'autre liste en crée une nouvelle. */
+function ChoixCategorie({ actuelle, groupes, valider }: {
+  actuelle: string; groupes: Record<string, string>; valider: (categorie: string, poste: string, toujours: boolean) => void;
+}) {
+  const parPoste = Map.groupBy(Object.keys(groupes).sort((a, b) => a.localeCompare(b, "fr")), (c) => groupes[c]);
+  parPoste.set(HORS, HORS_BUDGET);
+  const [poste, setPoste] = useState(HORS_BUDGET.includes(actuelle) ? HORS : groupes[actuelle] ?? "Divers");
+  const [cat, setCat] = useState(actuelle);
+  const cats = parPoste.get(poste) ?? [];
+  return (
+    <form className="mt-2 flex flex-wrap items-end gap-2 text-sm" action={(f) => valider(
+      String(cat === NOUVEAU || poste === NOUVEAU ? f.get("nouvelle_cat") : cat),
+      String(poste === NOUVEAU ? f.get("nouveau_poste") : poste), f.get("toujours") === "on")}>
+      <label className="flex flex-col">Catégorie
+        <select value={poste} className={champ} onChange={(e) => {
+          setPoste(e.target.value);
+          setCat(parPoste.get(e.target.value)?.[0] ?? NOUVEAU);
+        }}>
+          {[...parPoste.keys()].sort((a, b) => a.localeCompare(b, "fr")).map((p) => <option key={p}>{p}</option>)}
+          <option value={NOUVEAU}>+ Nouvelle catégorie…</option>
+        </select>
+      </label>
+      {poste === NOUVEAU && (
+        <label className="flex flex-col">Nom de la catégorie
+          <input name="nouveau_poste" required maxLength={40} autoFocus className={`${champ} w-36`} />
+        </label>
+      )}
+      {poste !== NOUVEAU && (
+        <label className="flex flex-col">Sous-catégorie
+          <select value={cat} onChange={(e) => setCat(e.target.value)} className={champ}>
+            {cats.map((c) => <option key={c}>{c}</option>)}
+            {poste !== HORS && <option value={NOUVEAU}>+ Nouvelle sous-catégorie…</option>}
+          </select>
+        </label>
+      )}
+      {(poste === NOUVEAU || cat === NOUVEAU) && (
+        <label className="flex flex-col">Nom de la sous-catégorie
+          <input name="nouvelle_cat" required maxLength={40} autoFocus={poste !== NOUVEAU} className={`${champ} w-36`} />
+        </label>
+      )}
+      <label className="flex items-center gap-1 py-1"><input type="checkbox" name="toujours" /> toujours pour ce commerçant</label>
+      <button className="rounded bg-emerald-700 px-2 py-1 text-white">OK</button>
+    </form>
   );
 }

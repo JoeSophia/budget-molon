@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { connecte } from "@/auth";
+import { groupes } from "@/lib/budget";
 import { fraisFixes } from "@/lib/fixes";
 import Entete from "../../Entete";
 import { supprimer } from "../actions";
@@ -37,7 +38,7 @@ async function Contenu({ params, searchParams }: PageProps<"/fixes/[id]">) {
   return (
     <>
       <h1 className="text-2xl font-semibold">{initial.id ? initial.libelle : "Nouveau frais fixe"}</h1>
-      <Formulaire initial={initial} />
+      <Formulaire initial={initial} groupes={await groupes()} />
       {initial.id && (
         <form action={supprimer} className="border-t border-neutral-200 pt-4 dark:border-neutral-800">
           <input type="hidden" name="id" value={initial.id} />

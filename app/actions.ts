@@ -2,13 +2,25 @@
 // Actions d'une ligne de dépense et des prévus. Chacune vérifie la connexion : une action serveur est appelable par tous.
 import { refresh } from "next/cache";
 import { connecte } from "@/auth";
-import { INTERNE, POSTES } from "@/lib/budget";
-import { CATEGORIES, norm } from "@/lib/categories";
+import { groupes, INTERNE, postes } from "@/lib/budget";
+import { HORS_BUDGET, norm } from "@/lib/categories";
 import { sql } from "@/lib/db";
 
-export async function changerCategorie(id: string, categorie: string, toujours: boolean) {
+/** Catégories proposées sur une dépense : sous-catégorie -> poste. */
+export async function categoriesDisponibles() {
   await connecte();
-  if (!CATEGORIES.includes(categorie)) throw new Error("Catégorie inconnue");
+  return groupes();
+}
+
+/** posteNouvelle : poste de la sous-catégorie à créer quand categorie n'existe pas encore (poste existant ou nouveau). */
+export async function changerCategorie(id: string, categorie: string, toujours: boolean, posteNouvelle?: string) {
+  await connecte();
+  categorie = categorie.trim();
+  if (!(categorie in await groupes()) && !HORS_BUDGET.includes(categorie)) {
+    const p = posteNouvelle?.trim();
+    if (!categorie || !p || categorie.length > 40 || p.length > 40) throw new Error("Catégorie inconnue");
+    await sql`insert into categories (nom, poste) values (${categorie}, ${p}) on conflict do nothing`;
+  }
   const [t] = await sql`update transactions set categorie = ${categorie}, categorie_manuelle = true where id = ${id} returning libelle, montant`;
   if (toujours && t) {
     const motif = norm(t.libelle).slice(0, 30);
@@ -90,6 +102,7 @@ export async function annulerRemboursements(depenseId: string) {
 /** Nouveau prévu pour un poste ; la différence est prise sur (ou rendue à) un autre poste, ou sur « non réparti » (compense = ""). */
 export async function changerPrevu(mois: string, posteModifie: string, montant: number, compense: string) {
   await connecte();
+  const POSTES = await postes();
   if (!POSTES.includes(posteModifie) || (compense && !POSTES.includes(compense)) || !(montant >= 0)) throw new Error("Prévu invalide");
   const [avant] = await sql`select montant::float from previsions where mois = ${mois} and poste = ${posteModifie}`;
   const ecart = montant - (avant?.montant ?? 0);

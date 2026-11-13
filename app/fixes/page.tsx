@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { connecte } from "@/auth";
-import { poste } from "@/lib/categories";
+import { groupes } from "@/lib/budget";
 import { fraisFixes } from "@/lib/fixes";
 import { euros } from "@/lib/format";
 import Entete from "../Entete";
@@ -24,7 +24,8 @@ async function Liste({ searchParams }: Pick<PageProps<"/fixes">, "searchParams">
   const annee = (await searchParams).vue === "annee";
   const fois = annee ? 12 : 1;
   const frais = await fraisFixes();
-  const parPoste = Map.groupBy(frais, (f) => poste(f.categorie));
+  const g = await groupes();
+  const parPoste = Map.groupBy(frais, (f) => g[f.categorie] ?? "Divers");
   const total = frais.reduce((s, f) => s + f.par_mois, 0);
   const onglet = (actif: boolean) => `rounded-md px-3 py-1 ${actif ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : ""}`;
 

@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { GROUPES } from "@/lib/categories";
 import { euros, PAR_AN, type Periodicite } from "@/lib/format";
 import { enregistrer } from "./actions";
 
@@ -11,7 +10,7 @@ export type Valeurs = {
 
 const champ = "w-full rounded border border-neutral-300 bg-transparent px-2 py-1.5 dark:border-neutral-700";
 
-export default function Formulaire({ initial }: { initial: Valeurs }) {
+export default function Formulaire({ initial, groupes }: { initial: Valeurs; groupes: Record<string, string> }) {
   const [periodicite, setPeriodicite] = useState<Periodicite>(initial.periodicite ?? "mensuel");
   const [montant, setMontant] = useState(initial.montant?.toString() ?? "");
   const m = Number(montant.replace(",", ".")) || initial.moyenne || 0;
@@ -24,7 +23,9 @@ export default function Formulaire({ initial }: { initial: Valeurs }) {
       <label className="flex flex-col gap-1">Catégorie
         <select name="categorie" required defaultValue={initial.categorie ?? ""} className={champ}>
           <option value="" disabled>Choisir…</option>
-          {Object.keys(GROUPES).sort((a, b) => a.localeCompare(b, "fr")).map((c) => <option key={c}>{c}</option>)}
+          {[...Map.groupBy(Object.keys(groupes), (c) => groupes[c])].sort(([a], [b]) => a.localeCompare(b, "fr")).map(([p, cats]) => (
+            <optgroup key={p} label={p}>{cats.map((c) => <option key={c}>{c}</option>)}</optgroup>
+          ))}
         </select>
       </label>
       <label className="flex flex-col gap-1">Périodicité

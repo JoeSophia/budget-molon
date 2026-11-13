@@ -28,7 +28,7 @@ Elle remplace la page actuelle (artifact claude.ai + scripts Python du dossier `
 
 ## 4. Catégories
 
-- On reprend les deux niveaux actuels, poste et sous-catégorie (`GROUPES` dans `analyse.py`), Padel compris.
+- Deux niveaux, poste et sous-catégorie : 11 postes et 34 sous-catégories pour les dépenses variables (refonte du 2026-11-13, `scripts/renommer-categories.mjs`). Les sous-catégories ajoutées depuis l'app vont dans la table `categories`.
 - La catégorie est attribuée automatiquement, dans cet ordre :
   1. choix fait à la main pour cette transaction ;
   2. règle « toujours pour ce commerçant » ;

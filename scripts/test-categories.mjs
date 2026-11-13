@@ -2,9 +2,9 @@
 import assert from "node:assert/strict";
 import { categoriser, enseigne, libelle, norm } from "../lib/categories.ts";
 
-assert.equal(enseigne("Fp Paris Sogiec Paris Fp5070/ Fp Paris Sogiec"), "Supermarché / Epicerie");
-assert.equal(enseigne("Boulanger Antibes"), "High Tech");
-assert.equal(enseigne("Boulangerie Paul"), "Alimentation - Autres");
+assert.equal(enseigne("Fp Paris Sogiec Paris Fp5070/ Fp Paris Sogiec"), "Courses");
+assert.equal(enseigne("Boulanger Antibes"), "High-tech");
+assert.equal(enseigne("Boulangerie Paul"), "Courses");
 assert.equal(enseigne("Hubert Thionville Hubert"), undefined);
 assert.equal(norm("Prlv Vir Inst De Edf 123"), "edf");
 assert.equal(libelle(["PRELEVEMENT  EDF", "REF 12ab|x"]), "Prlv Edf Ref 12Ab/X");

@@ -95,3 +95,9 @@ create table if not exists abonnements_push (
   abonnement  jsonb not null,
   cree_le     timestamptz not null default now()
 );
+
+-- Sous-catégories ajoutées depuis l'app (celles de départ sont dans lib/categories.ts)
+create table if not exists categories (
+  nom   text primary key,
+  poste text not null
+);
